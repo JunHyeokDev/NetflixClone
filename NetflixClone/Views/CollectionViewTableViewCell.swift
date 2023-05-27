@@ -3,13 +3,27 @@
 //  NetflixClone
 //
 //  Created by Jun Hyeok Kim on 2023/05/24.
-//
 
 import UIKit
 
-class CollectionViewTableViewCell: UITableViewCell {
+// MARK: - Protocol
 
+
+protocol CollectionViewTableViewCellDelegate: AnyObject {
+    func collectionViewTableViewCellDidTapCell(_ cell : CollectionViewTableViewCell, viewModel: TitlePreviewViewModel)
+}
+
+
+
+// MARK: - placeholderCollectionViewTableViewCell
+
+class CollectionViewTableViewCell: UITableViewCell {
+    
     static let identifier = "CollectionViewTableViewCell"
+    
+    weak var delegate : CollectionViewTableViewCellDelegate?
+    
+    private var titles : [Title] = [Title]()
     
     private let collectionView: UICollectionView = {
         
@@ -17,7 +31,7 @@ class CollectionViewTableViewCell: UITableViewCell {
         layout.itemSize = CGSize(width: 140, height: 200)
         layout.scrollDirection = .horizontal
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
+        collectionView.register(TitleCollectionViewCell.self, forCellWithReuseIdentifier: TitleCollectionViewCell.identifier)
         return collectionView
         
     }()
@@ -42,19 +56,53 @@ class CollectionViewTableViewCell: UITableViewCell {
         collectionView.frame = contentView.bounds
     }
     
+    public func configure(with titles: [Title]) {
+        self.titles = titles
+        DispatchQueue.main.async { [weak self] in
+            self?.collectionView.reloadData()
+        }
+    }
+    
 }
 
 
 extension CollectionViewTableViewCell : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 10
+        return titles.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
-        cell.backgroundColor = .green
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TitleCollectionViewCell.identifier, for: indexPath) as? TitleCollectionViewCell else { return UICollectionViewCell() }
+        
+        guard let model = titles[indexPath.row].poster_path else { return UICollectionViewCell() }
+        
+        cell.configure(with: model)
+        
         return cell
     }
     
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        
+        let title = titles[indexPath.row]
+        
+        guard let titleName = title.original_title ?? title.original_name else { return}
+        APICaller.shared.getMovie(with: titleName + " trailer") { [weak self] results in
+            switch results {
+            case.success(let video):
+                
+                guard let strongSelf = self else {
+                    return
+                }
+                
+                let title = self?.titles[indexPath.row]
+                guard let titleOverView = title?.overview else { return }
+                let viewModel = TitlePreviewViewModel(title: titleName, youtubeView: video, titleOverview: titleOverView)
+                self?.delegate?.collectionViewTableViewCellDidTapCell(strongSelf, viewModel: viewModel)
+            case.failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
     
 }
