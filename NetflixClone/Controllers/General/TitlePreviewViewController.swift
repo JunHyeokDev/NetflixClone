@@ -22,8 +22,7 @@ class TitlePreviewViewController: UIViewController {
         let label = UILabel()
         label.font = .systemFont(ofSize: 18, weight: .regular)
         label.translatesAutoresizingMaskIntoConstraints = false
-        //label.numberOfLines = 0
-        label.text = "Hi... OverView here"
+        label.numberOfLines = 0
         return label
     }()
     
@@ -67,11 +66,13 @@ class TitlePreviewViewController: UIViewController {
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: webView.bottomAnchor, constant: 20),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
         ])
         
         NSLayoutConstraint.activate([
             overViewLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 15),
             overViewLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            overViewLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
         ])
         
         NSLayoutConstraint.activate([

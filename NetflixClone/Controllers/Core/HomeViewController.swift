@@ -28,6 +28,9 @@ class HomeViewController: UIViewController {
     
     
     // MARK: - Properties
+    private var randomTrendingMovie : Title?
+    private var headerView : HeroHeaderUIView?
+    
     private let homeFeedTable : UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
         table.register(CollectionViewTableViewCell.self
@@ -47,9 +50,9 @@ class HomeViewController: UIViewController {
         homeFeedTable.dataSource = self
         configureNavbar()
         
-        let headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
+        headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
         homeFeedTable.tableHeaderView = headerView
-        
+        configureHeroHeaderView()
     }
     
     
@@ -59,6 +62,20 @@ class HomeViewController: UIViewController {
     }
     
     // MARK: - Configure
+    
+    private func configureHeroHeaderView() {
+        APICaller.shared.getTrendingMovies { [weak self] reuslt in
+            switch reuslt {
+            case .success(let titles):
+                let selectedTitle = titles.randomElement()
+                self?.randomTrendingMovie = selectedTitle
+                
+                self?.headerView?.configure(with: TitleViewModel(titleName: selectedTitle?.original_title ?? "", posterURL: selectedTitle?.poster_path ?? ""))
+            case.failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
     
     private func configureNavbar() {
         var image = UIImage(named: "Netflix2")

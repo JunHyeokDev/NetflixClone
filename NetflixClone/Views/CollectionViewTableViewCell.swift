@@ -16,9 +16,10 @@ protocol CollectionViewTableViewCellDelegate: AnyObject {
 
 
 // MARK: - placeholderCollectionViewTableViewCell
-
 class CollectionViewTableViewCell: UITableViewCell {
     
+    // MARK: - Properties
+
     static let identifier = "CollectionViewTableViewCell"
     
     weak var delegate : CollectionViewTableViewCellDelegate?
@@ -36,6 +37,9 @@ class CollectionViewTableViewCell: UITableViewCell {
         
     }()
     
+    
+    // MARK: - LifeCycle
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.backgroundColor = .systemPink
@@ -56,6 +60,8 @@ class CollectionViewTableViewCell: UITableViewCell {
         collectionView.frame = contentView.bounds
     }
     
+    // MARK: - Configre
+
     public func configure(with titles: [Title]) {
         self.titles = titles
         DispatchQueue.main.async { [weak self] in
@@ -63,8 +69,22 @@ class CollectionViewTableViewCell: UITableViewCell {
         }
     }
     
+    private func downloadTitleAt(indexPath : IndexPath) {
+        DataPersistanceManager.shared.downloadTitleWith(model: titles[indexPath.row]) { result in
+            switch result {
+            case.success():
+                print("Downlaoded!")
+                NotificationCenter.default.post(name: NSNotification.Name("downloaded"), object: nil)
+            case.failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
 }
 
+
+// MARK: - Extensions UICollectionViewDataSource, UICollectionViewDelegate
 
 extension CollectionViewTableViewCell : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -104,5 +124,18 @@ extension CollectionViewTableViewCell : UICollectionViewDataSource, UICollection
             }
         }
     }
+    
+    
+    
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let config = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let downloadAction = UIAction(title: "Download", subtitle: nil, image: nil, identifier: nil, discoverabilityTitle: nil, state: .off) { [weak self] _ in
+                self?.downloadTitleAt(indexPath: indexPath)
+            }
+            return UIMenu(title: "", image: nil, identifier: nil, options: .displayInline, children: [downloadAction])
+        }
+        return config
+    }
+    
     
 }
